@@ -1,141 +1,126 @@
 import os
 import traceback
+import re
 
 
 class processFile:
 
     def __init__(self, filePath, n):
+        """
+        Constructor for initialization
+        :param filePath: path where the file to be read can be found
+        :param n: length of the pattern to be found
+        """
         self.location = filePath
         self.n = n
         self.count = 0
-        # self.match = False
-
-        # print(self.location)
 
     def readFile(self):
+        """Takes the  file path provided, opens the file and reads it one line at a time.
+
+        Throws an exception if it cannot find or read the file.
+
+        Prints the line if a valid pattern is found and also prints the total number of
+        lines with valid pattern."""
 
         # proceed only if the file exists on the given path
         if os.path.exists(self.location):
-            #print("ok, so the path exists..")
+
             # read the file inside of a try-catch block so that you can catch any IO exceptions if thrown
             try:
                 with open(self.location) as inputFile:
 
                     # read each line in the file
                     for line in inputFile:
-                        result = self.processLines(line)
+                        result = self.findPattern(line)
 
                         # if the pattern found in line is valid, add to the count and print the line
                         if result:
                             self.count += 1
                             print(str(line))
 
-                print(self.count)
+                # print how many lines with valid patterns are found
+                print("number of lines with pattern: " + str(self.count))
 
             # catch the exception if thrown and print the stack
             except IOError as e:
                 print("Encountered an IOError ({0}): {1}".format(e.errno, e.strerror))
             except Exception as ex:
-                print(traceback.format_exc())
+                print("Unexpected error encountered: " + traceback.format_exc())
 
         # print the error message if file not found and return to the caller
         else:
             print("The file does not exist at the path provided.")
             return
 
-    def processLines(self, line):
+    def findPattern(self, line):
+        """
+        Takes the current line being read and finds if a valid pattern exists in it.
+
+        :param line:
+        :return: match - True/False depending on if a valid pattern is found
+        """
 
         k = self.n
-        # test
-        #print("in processLines")
 
         # treating line as a string
         currLine = str(line)
-        # test
-        print('\n' + currLine)
 
         # get the length of current line/string
         length = len(currLine)
-        # test
-        print("line size" + str(length))
 
-        # structure to check if there is a palindrome, if so , return true
+        # list to store all the matching patterns found in current line
+        matchingPatterns = []
+
+        for i in range(0, (length - k + 1)):
+
+            # get the ending index of substring from starting index i and length k
+            j = i + k - 1
+
+            # check if the current number of characters form a palindromic string
+            if currLine[i] == currLine[j] and currLine[i+1] == currLine[j-1]:
+
+                # construct the palindrome string
+                found = currLine[i] + currLine[i+1] + currLine[j-1] + currLine[j]
+
+                matchingPatterns.append(found)
+
+            #else:
+            #    match = False
+
+            i += 1
+
+        # print(matchingPatterns)
+        match = self.validate(matchingPatterns, currLine)
+        return match
+
+    def validate(self, matchingPatterns, currLine):
+        """
+        Function validates if all the patterns found in the current line are
+        correct or not by making sure they are not within square brackets
+
+        :param matchingPatterns: list of all the patterns found in current line
+        :param currLine: current line being processed
+        :return: match: Tur/False based on the validiry
+        """
+
         match = False
-        #i = 0
-        #while self.n <= lineSize:
-        for k in range(k, length):
 
-            # fix the starting index
-            i = 0
-            while i < (length - k + 1):
-                #i = 0
-            #for i in range (0 , )
-                # test
-                # print("i=" + str(i))
+        # create pattern to extract content from within square brackets
+        pattern = '\[(.*?)\]'
 
-                # get the ending index of substring from starting index i and length k
-                j = i + k - 1
-                # test
-                # print("j=" + str(j))
+        # extract content within all square brackets from the current line
+        bracketStrings = re.findall(pattern, currLine)
 
-                # checking for sub-string from ith index to jth index if
-                # st[i+1] to st[(j-1)] is a palindrome
+        # if the constructed palindrome string is found to be in the content from any brackets,
+        # the pattern would be invalid or else valid
+        for string in matchingPatterns:
 
-                # test
-                #first = currLine[i]+currLine[i+1]
-                #second = currLine[j-1]+currLine[j]
-                #print("*******")
-                #print(first)
-                #print(second)
-                #print("*******")
-                #print()
+            if any(string in item for item in bracketStrings):
+                match = False
+            else:
+                match = True
 
-                # check if the current number of characters form a palindromic string
-                #if currLine[i] == currLine[j] and currLine[i+1] == currLine[j-1]:
+        # return match
 
-
-                if currLine[i] == currLine[j]:
-
-                    # self.match = False
-                    first = currLine[i]
-                    second = currLine[j]
-
-                    mid = int((i + j + 1)/2)
-
-                    for x in range(i+1, mid):
-
-                        for y in range(j-1, mid-1, -1):
-
-                            first = first + currLine[x]
-                            second = second + currLine[y]
-                                # if length of current line is the number of characters to be searched, it is a valid match
-                                #if length == self.n:
-                                #    match = True
-
-                                # if the characters before the palindrome string are  '[' and ']', then match is invalid
-                                #elif currLine[i - 1] == "[" and currLine[j + 1] == ']':
-                                #    match = False
-
-                                #else:
-                                #    match = True
-
-                    if first == second:
-                        if length == self.n:
-                            match = True
-                        elif currLine[i - 1] == "[" and currLine[j + 1] == ']':
-                            match = False
-                        else:
-                            match = True
-
-                    print(first)
-                    print(second)
-                    # match = True
-
-                    print(match)
-                    return match
-
-                else:
-                    match = False
-                    print(match)
-
-                i += 1
+        return match
